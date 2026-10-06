@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('renders TaskNest application', () => {
+    render(<App />);
+    // Since not logged in, should show login/register UI
+    const elements = screen.queryAllByText(/login|register|welcome|tasknest/i);
+    expect(elements.length).toBeGreaterThan(0);
 });

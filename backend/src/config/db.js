@@ -3,29 +3,43 @@ require('dotenv').config();
 
 /**
  * MySQL Connection Pool
+ * Works for local MySQL, PlanetScale, and TiDB Cloud.
  */
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'todo_db',
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    connectTimeout: 10000,
+    // SSL required for cloud MySQL (PlanetScale, TiDB Cloud, Aiven, etc.)
+    ssl: process.env.DB_HOST && (
+        process.env.DB_HOST.includes('psdb.cloud') ||
+        process.env.DB_HOST.includes('tidbcloud.com') ||
+        process.env.DB_HOST.includes('aivencloud.com')
+    )
+        ? { rejectUnauthorized: false }
+        : undefined,
 });
 
 /**
- * Initialize database and tables if they don't exist.
+ * Initialize database and tables.
  */
 async function initDatabase() {
     try {
-        const tempConn = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-        });
-        await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'todo_db'}\``);
-        await tempConn.end();
+        // Auto-create DB only on localhost
+        if (!process.env.DB_HOST || process.env.DB_HOST === 'localhost') {
+            const tempConn = await mysql.createConnection({
+                host: process.env.DB_HOST || 'localhost',
+                user: process.env.DB_USER || 'root',
+                password: process.env.DB_PASSWORD || '',
+            });
+            await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'todo_db'}\``);
+            await tempConn.end();
+        }
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
