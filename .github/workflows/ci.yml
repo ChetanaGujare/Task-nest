@@ -13,6 +13,7 @@ jobs:
   backend:
     name: Backend (Node.js + Jest)
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:8.0
@@ -26,12 +27,15 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+
     defaults:
       run:
         working-directory: ./backend
+
     strategy:
       matrix:
         node-version: [18.x, 20.x]
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -44,7 +48,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: 🔍 Run ESLint
         run: npm run lint
@@ -78,12 +82,15 @@ jobs:
   frontend:
     name: Frontend (React + Jest)
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./frontend
+
     strategy:
       matrix:
         node-version: [18.x, 20.x]
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -96,7 +103,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: 🔧 Fix ajv version conflict
+        run: npm install ajv@8.12.0 ajv-keywords@5.1.0 --save-exact
+
+      - name: 📦 Ensure testing libraries
+        run: npm install --save-dev @testing-library/jest-dom @testing-library/react @testing-library/user-event
 
       - name: 🔍 Run ESLint
         run: npm run lint
@@ -119,7 +132,7 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # FINAL STATUS — All jobs passed
+  # FINAL STATUS — All jobs must pass
   # ============================================
   ci-success:
     name: ✅ All Checks Passed
@@ -131,6 +144,8 @@ jobs:
         run: |
           if [ "${{ needs.backend.result }}" != "success" ] || [ "${{ needs.frontend.result }}" != "success" ]; then
             echo "❌ Some jobs failed"
+            echo "Backend: ${{ needs.backend.result }}"
+            echo "Frontend: ${{ needs.frontend.result }}"
             exit 1
           fi
           echo "✅ All checks passed!"
