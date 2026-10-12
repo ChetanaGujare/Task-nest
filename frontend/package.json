@@ -2,6 +2,7 @@
   "name": "tasknest-frontend",
   "version": "1.0.0",
   "private": true,
+  "description": "TaskNest — React SPA with Bootstrap 5 and JWT authentication",
   "dependencies": {
     "ajv": "8.12.0",
     "ajv-keywords": "5.1.0",
@@ -20,35 +21,20 @@
     "lint:fix": "eslint src/ --ext .js,.jsx --fix"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ],
+    "extends": ["react-app", "react-app/jest"],
     "rules": {
-      "no-unused-vars": [
-        "warn",
-        {
-          "argsIgnorePattern": "^_"
-        }
-      ],
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "react-hooks/exhaustive-deps": "warn"
     }
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version"]
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
     "eslint": "^8.56.0"
   }
 }
