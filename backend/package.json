@@ -1,7 +1,7 @@
 {
   "name": "tasknest-api",
   "version": "1.0.0",
-  "description": "TaskNest — Full-stack task manager API with Express, MySQL, and JWT",
+  "description": "TaskNest — Full-stack task manager API with Express, MySQL, JWT, and security hardening",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -15,7 +15,7 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "keywords": ["express", "mysql", "jwt", "todo", "api", "tasknest"],
+  "keywords": ["express", "mysql", "jwt", "todo", "api", "tasknest", "security"],
   "author": "",
   "license": "MIT",
   "dependencies": {

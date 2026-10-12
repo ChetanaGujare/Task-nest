@@ -1,5 +1,13 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+// Client-side validation
+export const validators = {
+    username: (v) => /^[a-zA-Z0-9_]{3,30}$/.test(v) || 'Username must be 3-30 chars (letters, numbers, _)',
+    email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Invalid email format',
+    password: (v) => v.length >= 6 || 'Password must be at least 6 characters',
+    title: (v) => (v.length >= 1 && v.length <= 200) || 'Title must be 1-200 characters',
+};
+
 export async function apiFetch(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const headers = {

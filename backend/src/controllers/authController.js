@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
+const { sanitizeInput, validateInput } = require('../middleware/security');
 require('dotenv').config();
 
 function generateToken(userId) {
@@ -11,14 +12,42 @@ function generateToken(userId) {
 
 async function register(req, res) {
     try {
-        const { username, email, password } = req.body;
-        if (!username || !email || !password) {
-            return res.status(400).json({ success: false, error: 'All fields required' });
+        // ✅ Server-side validation
+        const usernameCheck = validateInput(req.body.username, {
+            minLength: 3, maxLength: 30, type: 'string', required: true
+        });
+        const emailCheck = validateInput(req.body.email, {
+            type: 'email', required: true
+        });
+        const passwordCheck = validateInput(req.body.password, {
+            minLength: 6, maxLength: 100, type: 'string', required: true
+        });
+
+        if (!usernameCheck.valid) {
+            return res.status(400).json({ success: false, error: usernameCheck.error });
         }
-        if (password.length < 6) {
-            return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+        if (!emailCheck.valid) {
+            return res.status(400).json({ success: false, error: emailCheck.error });
+        }
+        if (!passwordCheck.valid) {
+            return res.status(400).json({ success: false, error: passwordCheck.error });
         }
 
+        // ✅ Additional username format check
+        const usernameRegex = /^[a-zA-Z0-9_]+$/;
+        if (!usernameRegex.test(usernameCheck.value)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Username can only contain letters, numbers, and underscores',
+            });
+        }
+
+        // ✅ Sanitize inputs (XSS prevention)
+        const username = sanitizeInput(usernameCheck.value);
+        const email = sanitizeInput(emailCheck.value);
+        const password = passwordCheck.value; // Don't sanitize — hashed anyway
+
+        // ✅ Parameterized query (SQL injection prevention)
         const [existing] = await pool.query(
             'SELECT id FROM users WHERE username = ? OR email = ?',
             [username, email]
@@ -28,6 +57,8 @@ async function register(req, res) {
         }
 
         const hashed = await bcrypt.hash(password, 10);
+
+        // ✅ Parameterized INSERT
         const [result] = await pool.query(
             'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
             [username, email, hashed]
@@ -43,11 +74,20 @@ async function register(req, res) {
 
 async function login(req, res) {
     try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({ success: false, error: 'Username and password required' });
+        const usernameCheck = validateInput(req.body.username, {
+            minLength: 3, maxLength: 30, type: 'string', required: true
+        });
+        const passwordCheck = validateInput(req.body.password, {
+            minLength: 1, maxLength: 100, type: 'string', required: true
+        });
+
+        if (!usernameCheck.valid || !passwordCheck.valid) {
+            return res.status(400).json({ success: false, error: 'Invalid input' });
         }
 
+        const username = sanitizeInput(usernameCheck.value);
+
+        // ✅ Parameterized query
         const [rows] = await pool.query(
             'SELECT id, password_hash FROM users WHERE username = ?',
             [username]
@@ -57,7 +97,7 @@ async function login(req, res) {
         }
 
         const user = rows[0];
-        const valid = await bcrypt.compare(password, user.password_hash);
+        const valid = await bcrypt.compare(passwordCheck.value, user.password_hash);
         if (!valid) {
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
@@ -72,6 +112,7 @@ async function login(req, res) {
 
 async function getMe(req, res) {
     try {
+        // ✅ Parameterized query
         const [rows] = await pool.query(
             'SELECT id, username, email FROM users WHERE id = ?',
             [req.user_id]

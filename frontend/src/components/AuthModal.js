@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { validators } from '../api/api';
 import '../App.css';
 
 export default function AuthModal() {
@@ -9,11 +10,37 @@ export default function AuthModal() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        // ✅ Basic client-side sanitization (limit length)
+        const value = e.target.value.slice(0, 200);
+        setForm({ ...form, [e.target.name]: value });
+    };
+
+    const validate = () => {
+        const usernameCheck = validators.username(form.username);
+        if (usernameCheck !== true) return usernameCheck;
+
+        if (isRegister) {
+            const emailCheck = validators.email(form.email);
+            if (emailCheck !== true) return emailCheck;
+        }
+
+        const passwordCheck = validators.password(form.password);
+        if (passwordCheck !== true) return passwordCheck;
+
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        const validationResult = validate();
+        if (validationResult !== true) {
+            setError(validationResult);
+            return;
+        }
+
         setLoading(true);
         try {
             if (isRegister) {
@@ -40,10 +67,14 @@ export default function AuthModal() {
                         <input
                             name="username"
                             className="form-control"
-                            placeholder="Username"
+                            placeholder="Username (3-30 chars)"
                             value={form.username}
                             onChange={handleChange}
                             required
+                            maxLength={30}
+                            minLength={3}
+                            pattern="[a-zA-Z0-9_]+"
+                            title="Only letters, numbers, and underscores"
                         />
                     </div>
                     {isRegister && (
@@ -56,6 +87,7 @@ export default function AuthModal() {
                                 value={form.email}
                                 onChange={handleChange}
                                 required
+                                maxLength={120}
                             />
                         </div>
                     )}
@@ -69,6 +101,7 @@ export default function AuthModal() {
                             onChange={handleChange}
                             required
                             minLength={6}
+                            maxLength={100}
                         />
                     </div>
                     <button type="submit" className="btn btn-gradient w-100 mb-3" disabled={loading}>
