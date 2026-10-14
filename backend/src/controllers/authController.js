@@ -10,17 +10,26 @@ function generateToken(userId) {
     });
 }
 
+// ============================================
+// All auth endpoints — NO caching
+// ============================================
+function setNoCache(res) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+}
+
 async function register(req, res) {
+    setNoCache(res);
     try {
-        // ✅ Server-side validation
         const usernameCheck = validateInput(req.body.username, {
-            minLength: 3, maxLength: 30, type: 'string', required: true
+            minLength: 3, maxLength: 30, type: 'string', required: true,
         });
         const emailCheck = validateInput(req.body.email, {
-            type: 'email', required: true
+            type: 'email', required: true,
         });
         const passwordCheck = validateInput(req.body.password, {
-            minLength: 6, maxLength: 100, type: 'string', required: true
+            minLength: 6, maxLength: 100, type: 'string', required: true,
         });
 
         if (!usernameCheck.valid) {
@@ -33,7 +42,6 @@ async function register(req, res) {
             return res.status(400).json({ success: false, error: passwordCheck.error });
         }
 
-        // ✅ Additional username format check
         const usernameRegex = /^[a-zA-Z0-9_]+$/;
         if (!usernameRegex.test(usernameCheck.value)) {
             return res.status(400).json({
@@ -42,12 +50,10 @@ async function register(req, res) {
             });
         }
 
-        // ✅ Sanitize inputs (XSS prevention)
         const username = sanitizeInput(usernameCheck.value);
         const email = sanitizeInput(emailCheck.value);
-        const password = passwordCheck.value; // Don't sanitize — hashed anyway
+        const password = passwordCheck.value;
 
-        // ✅ Parameterized query (SQL injection prevention)
         const [existing] = await pool.query(
             'SELECT id FROM users WHERE username = ? OR email = ?',
             [username, email]
@@ -57,8 +63,6 @@ async function register(req, res) {
         }
 
         const hashed = await bcrypt.hash(password, 10);
-
-        // ✅ Parameterized INSERT
         const [result] = await pool.query(
             'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
             [username, email, hashed]
@@ -73,12 +77,13 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
+    setNoCache(res);
     try {
         const usernameCheck = validateInput(req.body.username, {
-            minLength: 3, maxLength: 30, type: 'string', required: true
+            minLength: 3, maxLength: 30, type: 'string', required: true,
         });
         const passwordCheck = validateInput(req.body.password, {
-            minLength: 1, maxLength: 100, type: 'string', required: true
+            minLength: 1, maxLength: 100, type: 'string', required: true,
         });
 
         if (!usernameCheck.valid || !passwordCheck.valid) {
@@ -87,7 +92,6 @@ async function login(req, res) {
 
         const username = sanitizeInput(usernameCheck.value);
 
-        // ✅ Parameterized query
         const [rows] = await pool.query(
             'SELECT id, password_hash FROM users WHERE username = ?',
             [username]
@@ -111,8 +115,8 @@ async function login(req, res) {
 }
 
 async function getMe(req, res) {
+    setNoCache(res);
     try {
-        // ✅ Parameterized query
         const [rows] = await pool.query(
             'SELECT id, username, email FROM users WHERE id = ?',
             [req.user_id]
