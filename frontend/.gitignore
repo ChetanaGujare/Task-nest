@@ -21,3 +21,36 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Test files with tokens
+*.json.tmp
+login.json
+register.json
+response.json
+*.test-local.json
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Coverage
+coverage/
+*/coverage/
+
+# Build outputs
+build/
+dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
