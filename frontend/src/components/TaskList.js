@@ -1,11 +1,13 @@
+import { useMemo, memo } from 'react';
 import TaskItem from './TaskItem';
 
-export default function TaskList({ tasks, filter, onToggle, onDelete }) {
-    const filtered = tasks.filter(t => {
-        if (filter === 'pending') return !t.completed;
-        if (filter === 'done') return !!t.completed;
-        return true;
-    });
+function TaskList({ tasks, filter, onToggle, onDelete }) {
+    // Memoize filtered list
+    const filtered = useMemo(() => {
+        if (filter === 'pending') return tasks.filter(t => !t.completed);
+        if (filter === 'done') return tasks.filter(t => t.completed);
+        return tasks;
+    }, [tasks, filter]);
 
     if (filtered.length === 0) {
         const msg =
@@ -28,3 +30,6 @@ export default function TaskList({ tasks, filter, onToggle, onDelete }) {
         </ul>
     );
 }
+
+// Memoize component
+export default memo(TaskList);

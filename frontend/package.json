@@ -2,7 +2,6 @@
   "name": "tasknest-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "TaskNest — React SPA with Bootstrap 5 and JWT authentication",
   "dependencies": {
     "ajv": "8.12.0",
     "ajv-keywords": "5.1.0",
