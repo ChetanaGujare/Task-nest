@@ -4,127 +4,132 @@
 [![Backend Tests](https://img.shields.io/badge/backend-tested-green)](https://github.com/ChetanaGujare/Task-nest/actions)
 [![Frontend Tests](https://img.shields.io/badge/frontend-tested-green)](https://github.com/ChetanaGujare/Task-nest/actions)
 [![Security](https://img.shields.io/badge/security-XSS%20%7C%20SQLi-blue)](https://github.com/ChetanaGujare/Task-nest)
+[![API Docs](https://img.shields.io/badge/API%20Docs-Swagger-85EA2D?logo=swagger)](http://localhost:5000/api-docs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A **secure** full-stack task management application with JWT authentication, CI/CD, and comprehensive security hardening.
+A **secure, well-documented** full-stack task management application with JWT authentication, HTTP caching, and CI/CD.
+
+## 📚 API Documentation (Swagger UI)
+
+Interactive API documentation is available via **Swagger UI**:
+
+- 🖥️ **Local**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
+- 📄 **OpenAPI spec**: [http://localhost:5000/api-docs/swagger.yaml](http://localhost:5000/api-docs/swagger.yaml)
+
+**Features:**
+- ✅ Try-it-out functionality (execute API calls directly from browser)
+- ✅ JWT authorization (click "Authorize" and paste your token)
+- ✅ Full schema documentation for all endpoints
+- ✅ Request/response examples
+
+### How to Use Swagger UI
+
+1. Start the backend: `cd backend && npm start`
+2. Open: http://localhost:5000/api-docs
+3. Register or login via `/api/register` or `/api/login` → copy the `token`
+4. Click **Authorize** button (top right) → enter: `Bearer YOUR_TOKEN_HERE`
+5. Now you can test any authenticated endpoint directly!
 
 ## ✨ Features
 
-- 🔐 JWT authentication with bcrypt password hashing
-- 🛡️ **XSS protection** (input sanitization + frontend escaping)
-- 🛡️ **SQL injection prevention** (100% parameterized queries)
-- 🛡️ **Content Security Policy** headers
-- 🛡️ **Server-side validation** (types, lengths, formats)
-- 📝 Full CRUD for tasks
-- 🎨 Responsive UI (React + Bootstrap 5)
-- 🔄 **CI/CD** with GitHub Actions (lint, test, build)
+### 🔐 Authentication & Security
+- JWT-based authentication with bcrypt password hashing
+- **XSS protection** — Input sanitization + frontend escaping
+- **SQL injection prevention** — 100% parameterized queries
+- **Content Security Policy** headers
+- **Strict CORS whitelist** (rejects unknown origins)
+- Server-side validation (types, lengths, formats)
 
-## 🛡️ Security Measures
+### ⚡ Performance — Caching & ETag
+- **Cache-Control headers** — `private, max-age=60` for user data, `public` for static
+- **ETag support** — Conditional GET (304 Not Modified)
+- **Static asset caching** — 1-year immutable cache for JS/CSS/images
+- **MySQL connection pooling**
 
-| # | Protection | Implementation |
-|---|-----------|----------------|
-| 1 | SQL Injection | Parameterized queries in all controllers |
-| 2 | XSS | Input sanitization (backend) + HTML escaping (frontend) |
-| 3 | CSP Headers | `middleware/security.js` sets CSP, X-Frame-Options, HSTS |
-| 4 | Input Validation | Server-side validation of type, length, format |
-| 5 | Rate Limiting | Body size limit (10kb) + test coverage |
+### 📚 Documentation
+- **Swagger UI** at `/api-docs`
+- **OpenAPI 3.0 spec** in `backend/src/docs/swagger.yaml`
+- Full request/response schemas
 
-## 🔄 CI/CD Pipeline
-
-Every push and PR runs:
-- ✅ ESLint on backend + frontend
-- ✅ Jest tests for backend (with MySQL service)
-- ✅ React tests for frontend
-- ✅ Production build of React app
-- ✅ Artifact upload
+### 🔄 CI/CD
+- **GitHub Actions** — Runs on every push & PR
+- ESLint + Jest on both backend & frontend
+- Frontend production build with artifact upload
 
 ## 📁 Project Structure
-
-```
 TaskNest/
-├── .github/workflows/ci.yml
+├── .github/workflows/ci.yml # CI/CD pipeline
 ├── backend/
-│   ├── src/
-│   │   ├── config/db.js
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   │   ├── auth.js
-│   │   │   └── security.js         ← NEW
-│   │   ├── routes/
-│   │   └── server.js
-│   └── tests/
-│       ├── auth.test.js
-│       ├── todo.test.js
-│       └── security.test.js        ← NEW
-└── frontend/
-    ├── src/
-    │   ├── utils/sanitize.js       ← NEW
-    │   ├── components/
-    │   └── api/
-    └── ...
-```
+│ ├── src/
+│ │ ├── config/db.js
+│ │ ├── controllers/
+│ │ ├── docs/swagger.yaml ← NEW: OpenAPI spec
+│ │ ├── middleware/
+│ │ │ ├── auth.js
+│ │ │ ├── cache.js
+│ │ │ └── security.js
+│ │ ├── routes/
+│ │ └── server.js
+│ └── tests/
+├── frontend/
+└── README.md
 
-## 🚀 Installation
+text
+
+## 🚀 Setup
 
 ### Backend
 ```bash
 cd backend
 npm install
 npm start
-```
+Runs at http://localhost:5000 · Docs at http://localhost:5000/api-docs
 
-### Frontend
-```bash
+Frontend
+bash
 cd frontend
 npm install
 npm start
-```
+Runs at http://localhost:3000
 
-## 🧪 Testing Security
-
-```bash
+🧪 Testing
+Backend
+bash
 cd backend
-npm test        # Runs all tests including security tests
+npm test              # Jest (with coverage)
+npm run lint          # ESLint
+Frontend
+bash
+cd frontend
+npm test -- --watchAll=false
 npm run lint
-```
-# 🪺 TaskNest-API
+npm run build
+📡 API Endpoints
+Method	Endpoint	Description	Auth
+POST	/api/register	Register new user	No
+POST	/api/login	Login and get JWT	No
+GET	/api/me	Get current user	Yes
+GET	/api/todos	Get all todos	Yes
+POST	/api/todos	Create todo	Yes
+PUT	/api/todos/:id	Update todo	Yes
+DELETE	/api/todos/:id	Delete todo	Yes
+🔒 Security
+bcryptjs password hashing (10 rounds)
 
-A secure, full-stack task manager API with JWT authentication, caching, and ETag support.
+JWT tokens (24-hour expiry)
 
-## ⚡ Performance — Caching & ETag
+Parameterized SQL queries
 
-TaskNest-API implements **HTTP caching** to reduce bandwidth and improve response times.
+Input sanitization (XSS)
 
-### Cache-Control Strategy
+Content Security Policy
 
-| Endpoint Type | Cache-Control | Reason |
-|---------------|---------------|--------|
-| `GET /api/todos` | `private, max-age=60, must-revalidate` | User-specific data, short cache |
-| `GET /api/health` | `public, max-age=30` | Public health check |
-| `POST /api/todos` | `no-store` | Mutations not cached |
-| `PUT /api/todos/:id` | `no-store` | Mutations not cached |
-| `DELETE /api/todos/:id` | `no-store` | Mutations not cached |
-| `POST /api/register` | `no-store, no-cache` | Auth responses sensitive |
-| `POST /api/login` | `no-store, no-cache` | Auth responses sensitive |
-| `GET /api/me` | `no-store, no-cache` | User-specific auth data |
+CORS whitelist
 
-### ETag Support
+Body size limits (10kb)
 
-Every `GET` response includes an `ETag` header (MD5 hash of the response body).
-
-**Conditional GET:** Clients can send `If-None-Match: <etag>` to check if the resource has changed.
-- If ETag matches → **304 Not Modified** (no body, saves bandwidth)
-- If ETag differs → **200 OK** with fresh body + new ETag
-
-### How It Works
-
-```javascript
-// Middleware automatically:
-// 1. Sets Cache-Control based on route
-// 2. Computes ETag from response body
-// 3. Checks If-None-Match header → returns 304 if unchanged$response = Invoke-WebRequest -Uri http://localhost:5000/api/todos -Method GET -Headers @{ "Authorization" = "Bearer $token" }
-
-
-## 📄 License
-
+📄 License
 MIT License
+
+
+

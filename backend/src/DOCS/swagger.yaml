@@ -1,0 +1,385 @@
+openapi: 3.0.3
+info:
+  title: TaskNest API
+  description: |
+    **TaskNest** — Secure full-stack task manager API with:
+    - JWT authentication
+    - XSS & SQL injection protection
+    - HTTP caching (Cache-Control + ETag)
+    - Per-user task isolation
+
+    ## Authentication
+    This API uses **JWT Bearer tokens**. To authenticate:
+    1. Register via `POST /api/register` or login via `POST /api/login`
+    2. Copy the `token` from the response
+    3. Click the **Authorize** button (top right)
+    4. Enter: `Bearer YOUR_TOKEN_HERE`
+    5. All authenticated requests will include the token
+  version: 1.0.0
+  contact:
+    name: TaskNest
+    url: https://github.com/ChetanaGujare/Task-nest
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: https://tasknest-api.onrender.com
+    description: Production (Render)
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Todos
+    description: Todo CRUD operations (requires JWT)
+
+paths:
+  /api/health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      description: Check if the API is running
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: TaskNest-API is running
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: public, max-age=30
+            ETag:
+              schema:
+                type: string
+                example: '"abc123def456"'
+
+  /api/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Create a new user account and receive a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 30
+                  pattern: '^[a-zA-Z0-9_]+$'
+                  example: chetana
+                email:
+                  type: string
+                  format: email
+                  maxLength: 120
+                  example: chetana@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  maxLength: 100
+                  example: secret123
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user_id:
+                    type: integer
+                    example: 1
+        '400':
+          description: Validation error (missing fields, invalid email, weak password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Login an existing user
+      description: Authenticate and receive a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: chetana
+                password:
+                  type: string
+                  example: secret123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                  user_id:
+                    type: integer
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/me:
+    get:
+      tags: [Auth]
+      summary: Get current user info
+      description: Returns the authenticated user's details
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+
+  /api/todos:
+    get:
+      tags: [Todos]
+      summary: Get all todos for current user
+      description: Returns all todos belonging to the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of todos
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: private, max-age=60, must-revalidate
+            ETag:
+              schema:
+                type: string
+                example: '"2df7864b12e4cd28b55ab0cb50ee1c02"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Todo'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Todos]
+      summary: Create a new todo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  example: Learn Swagger UI
+                description:
+                  type: string
+                  maxLength: 1000
+                  example: Integrate Swagger UI into the TaskNest API
+      responses:
+        '201':
+          description: Todo created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/todos/{id}:
+    put:
+      tags: [Todos]
+      summary: Update an existing todo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Updated title
+                description:
+                  type: string
+                  example: Updated description
+                completed:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Todo updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: Invalid input
+        '404':
+          description: Todo not found
+    delete:
+      tags: [Todos]
+      summary: Delete a todo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      responses:
+        '200':
+          description: Todo deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '404':
+          description: Todo not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Enter your JWT token (get it from /api/login or /api/register)'
+
+  schemas:
+    Todo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Learn Swagger UI
+        description:
+          type: string
+          example: Integrate Swagger UI into the API
+        completed:
+          type: boolean
+          example: false
+        user_id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-10-15T14:30:00.000Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Invalid input
